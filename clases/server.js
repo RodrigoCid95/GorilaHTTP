@@ -8,8 +8,6 @@ var HTTPS = require("https");
 var Path = require("path");
 var fs = require("fs");
 var bodyParser = require("body-parser");
-var formidableMiddleware = require("express-formidable");
-var cookieParser = require("cookie-parser");
 var core_1 = require("@gorila/core");
 var HTTPServer = (function () {
     function HTTPServer(rootDir) {
@@ -20,34 +18,46 @@ var HTTPServer = (function () {
         this.HTTPControllersInstances = [];
     }
     HTTPServer.prototype.init = function () {
-        var _a, _b;
-        return tslib_1.__awaiter(this, void 0, void 0, function () {
-            var error_1;
-            return tslib_1.__generator(this, function (_c) {
-                switch (_c.label) {
+        var _this = this;
+        return new Promise(function (resolve, reject) { return tslib_1.__awaiter(_this, void 0, void 0, function () {
+            var pathConfig, error_1;
+            var _a, _b, _c, _d, _e;
+            return tslib_1.__generator(this, function (_f) {
+                switch (_f.label) {
                     case 0:
-                        _c.trys.push([0, 5, , 6]);
-                        this.loaderConfig = require(Path.normalize(this.rootDir + "/config")).default;
-                        this.useLogger = (_b = (_a = this.loaderConfig.getConfig('GorilaHttp')) === null || _a === void 0 ? void 0 : _a.dev) === null || _b === void 0 ? void 0 : _b.logger;
-                        core_1.Log('Iniciando http server ...', this.useLogger);
-                        if (!fs.existsSync(Path.normalize(this.rootDir + "/libraries/index.js"))) return [3, 2];
-                        return [4, this.loadLibraries()];
+                        pathConfig = Path.normalize(this.rootDir + "/config/index.js");
+                        _f.label = 1;
                     case 1:
-                        _c.sent();
-                        return [3, 4];
-                    case 2: return [4, this.runHTTPServer()];
-                    case 3:
-                        _c.sent();
-                        _c.label = 4;
-                    case 4: return [3, 6];
-                    case 5:
-                        error_1 = _c.sent();
-                        console.error(error_1);
-                        return [3, 6];
-                    case 6: return [2];
+                        _f.trys.push([1, 10, , 11]);
+                        if (!fs.existsSync(pathConfig)) return [3, 8];
+                        this.loaderConfig = require(pathConfig).default;
+                        if (!(((_c = (_b = (_a = this.loaderConfig) === null || _a === void 0 ? void 0 : _a['__proto__']) === null || _b === void 0 ? void 0 : _b['constructor']) === null || _c === void 0 ? void 0 : _c.name) === 'LoaderConfig')) return [3, 6];
+                        this.useLogger = (_e = (_d = this.loaderConfig.getConfig('GorilaHttp')) === null || _d === void 0 ? void 0 : _d.dev) === null || _e === void 0 ? void 0 : _e.logger;
+                        core_1.Log('Iniciando http server ...', this.useLogger);
+                        if (!fs.existsSync(Path.normalize(this.rootDir + "/libraries/index.js"))) return [3, 3];
+                        return [4, this.loadLibraries()];
+                    case 2:
+                        _f.sent();
+                        resolve();
+                        return [3, 5];
+                    case 3: return [4, this.runHTTPServer()];
+                    case 4:
+                        _f.sent();
+                        resolve();
+                        _f.label = 5;
+                    case 5: return [3, 7];
+                    case 6: throw new Error("En el m\u00F3dulo exportado en " + pathConfig + " no se encuentra una instacia v\u00E1lida de configuraci\u00F3n,");
+                    case 7: return [3, 9];
+                    case 8: throw new Error("No se encontro el módulo de configuración, asegurate haberlo declarado.");
+                    case 9: return [3, 11];
+                    case 10:
+                        error_1 = _f.sent();
+                        reject(error_1);
+                        return [3, 11];
+                    case 11: return [2];
                 }
             });
-        });
+        }); });
     };
     HTTPServer.prototype.loadLibraries = function () {
         return tslib_1.__awaiter(this, void 0, void 0, function () {
@@ -75,14 +85,11 @@ var HTTPServer = (function () {
             var dirControllers = Path.normalize(_this.rootDir + "/Controllers/http.js");
             if (fs.existsSync("" + dirControllers)) {
                 core_1.Log("Instanciando Express ...", _this.useLogger);
-                _this.httpServer = new HTTP.Server(_this.app);
-                var profileConfig = _this.loaderConfig.getConfig('GorilaHttp');
-                profileConfig.formidableEvents = (profileConfig === null || profileConfig === void 0 ? void 0 : profileConfig.formidableEvents) || [];
-                profileConfig.formidableOptions = (profileConfig === null || profileConfig === void 0 ? void 0 : profileConfig.formidableOptions) || {};
+                var profileConfig = _this.loaderConfig.getConfig('GorilaHttp') || {};
+                _this.httpServer = profileConfig.http ? HTTP.createServer(profileConfig.http, _this.app) : HTTP.createServer(_this.app);
                 _this.isHttps = (profileConfig.https !== undefined);
                 if (_this.isHttps) {
-                    var _f = profileConfig.https, key = _f.key, cert = _f.cert;
-                    _this.httpsServer = HTTPS.createServer(tslib_1.__assign(tslib_1.__assign({}, profileConfig.https), { key: key, cert: cert }), _this.app);
+                    _this.httpsServer = profileConfig.https ? HTTPS.createServer(profileConfig.https, _this.app) : HTTPS.createServer(_this.app);
                 }
                 if ((_a = profileConfig === null || profileConfig === void 0 ? void 0 : profileConfig.dev) === null || _a === void 0 ? void 0 : _a.showExternalIp) {
                     var interfaces = require("os").networkInterfaces();
@@ -121,17 +128,36 @@ var HTTPServer = (function () {
                 }
                 _this.app.use(bodyParser.json());
                 _this.app.use(bodyParser.urlencoded({ extended: false }));
-                _this.app.use(cookieParser());
-                _this.app.use(formidableMiddleware(profileConfig.formidableOptions, profileConfig.formidableEvents));
                 if ((_d = profileConfig === null || profileConfig === void 0 ? void 0 : profileConfig.events) === null || _d === void 0 ? void 0 : _d.afterConfig) {
                     _this.app = profileConfig.events.afterConfig(_this.app);
                 }
                 core_1.Log('Express instanciado!', _this.useLogger);
                 core_1.Log('Cargando controladores HTTP ...', _this.useLogger);
                 _this.HTTPControllersDeclarations = require("" + dirControllers).default;
-                for (var _i = 0, _g = _this.HTTPControllersDeclarations; _i < _g.length; _i++) {
-                    var controller = _g[_i];
-                    _this.HTTPControllersInstances.push(new controller(_this.app, _this.useLogger, _this.libraryManager));
+                for (var _i = 0, _f = _this.HTTPControllersDeclarations; _i < _f.length; _i++) {
+                    var controller = _f[_i];
+                    _this.HTTPControllersInstances.push(new controller(_this.useLogger, _this.libraryManager));
+                }
+                for (var _g = 0, _h = _this.HTTPControllersInstances; _g < _h.length; _g++) {
+                    var controller = _h[_g];
+                    if (controller['prefix']) {
+                        var firsteChart = controller['prefix'][0];
+                        var lastChart = controller['prefix'][(controller['prefix'].length - 1)];
+                        if (lastChart === '/') {
+                            controller['prefix'].pop();
+                        }
+                        if (firsteChart !== '/') {
+                            controller['prefix'] = '/' + controller['prefix'];
+                        }
+                        _this.app.use(controller['prefix'], controller['router']);
+                    }
+                    else {
+                        _this.app.use(controller['router']);
+                    }
+                    delete controller['router'];
+                }
+                if (_this.HTTPControllersInstances.length === 0) {
+                    throw new Error("No se encontraron controladores HTTP.");
                 }
                 core_1.Log('Controladores cargados!', _this.useLogger);
                 if ((_e = profileConfig === null || profileConfig === void 0 ? void 0 : profileConfig.events) === null || _e === void 0 ? void 0 : _e.beforeStarting) {

@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Post = exports.Get = void 0;
+exports.Prefix = exports.Post = exports.Get = void 0;
+var tslib_1 = require("tslib");
 function Get(path) {
     return function (target, propertyKey, descriptor) {
         if (!target.hasOwnProperty('routes')) {
@@ -73,4 +74,18 @@ function Post(path) {
 }
 exports.Post = Post;
 ;
+function Prefix(prefix) {
+    return function (constructor) {
+        return (function (_super) {
+            tslib_1.__extends(class_1, _super);
+            function class_1() {
+                var _this = _super !== null && _super.apply(this, arguments) || this;
+                _this.prefix = prefix;
+                return _this;
+            }
+            return class_1;
+        }(constructor));
+    };
+}
+exports.Prefix = Prefix;
 //# sourceMappingURL=router.js.map
